@@ -4,3 +4,4 @@ openpyxl
 requests
 python-dotenv
 gunicorn
+gevent
