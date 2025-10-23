@@ -46,16 +46,19 @@ document.addEventListener("DOMContentLoaded", () => {
       eventSource.onmessage = (event) => {
         const message = event.data;
 
-        if (message.startsWith(`DONE:${jobId}`)) {
-          // Check if the job status is 'completed' to show the download link
-          if (message.includes("failed")) {
-            logWindow.textContent +=
-              "\n\nProcess finished with an error. No download available.";
-          } else {
+        if (message.startsWith(`DONE:`)) {
+          const parts = message.split(":"); // e.g., ["DONE", "completed", "job-id"]
+          const status = parts[1];
+
+          if (status === "completed") {
             logWindow.textContent +=
               "\n\nProcess complete. Your download is ready.";
             downloadLink.href = `/download/${jobId}`;
             downloadLink.style.display = "inline-block";
+          } else {
+            // Handles 'failed' or any other status
+            logWindow.textContent +=
+              "\n\nProcess finished with an error. No download available.";
           }
           eventSource.close();
           resetButton();

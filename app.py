@@ -1,3 +1,6 @@
+from gevent import monkey
+monkey.patch_all()
+
 import os
 import requests
 import pandas as pd
@@ -201,9 +204,10 @@ def run_comparison_background_task(job_id, files1_map, files2_map, output_name, 
         # ### END OF FIX ###
 
     finally:
+        final_status = JOBS[job_id].get('status', 'unknown')
+        log_queue.put(f"DONE:{final_status}:{job_id}")
         # This block will run whether there was an error or not.
         # We must signal the frontend that the process is over.
-        log_queue.put(f"DONE:{job_id}")
         # Clean up the temporary directories
         shutil.rmtree(temp_dir1)
         shutil.rmtree(temp_dir2)
