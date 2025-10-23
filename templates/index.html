@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-g">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel File Comparison Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Excel File Comparison Tool</h1>
+        <p>Select two folders containing matching Excel files (.xlsx) to compare their numerical data.</p>
+        
+        <form id="comparison-form">
+            <div class="folder-selection">
+                <div class="folder-box">
+                    <label for="folder1">Folder 1 (Old Versions)</label>
+                    <p class="description">Select all the old version files.</p>
+                    <input type="file" id="folder1" name="folder1_files" webkitdirectory multiple required>
+                </div>
+                <div class="folder-box">
+                    <label for="folder2">Folder 2 (New Versions)</label>
+                    <p class="description">Select all the new version files.</p>
+                    <input type="file" id="folder2" name="folder2_files" webkitdirectory multiple required>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <label for="output_name">Output ZIP File Name</label>
+                <input type="text" id="output_name" name="output_name" value="comparison_results" required>
+            </div>
+            
+            <button type="submit" id="compare-button">
+                <span class="button-text">Compare Folders</span>
+                <div class="spinner" style="display: none;"></div>
+            </button>
+        </form>
+
+        <div id="results-section" style="display:none;">
+            <h2>Comparison Log</h2>
+            <pre id="log-window"></pre>
+            <a href="#" id="download-link" class="download-button" style="display:none;">Download Results ZIP</a>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
