@@ -147,7 +147,6 @@ def run_comparison_background_task(job_id, files1_map, files2_map, output_name, 
     log_queue = JOBS[job_id]['queue']
     output_folder = None
     try:
-        # ... (The main logic of the function remains the same)
         if not API_KEY:
             log_queue.put("CRITICAL ERROR: GEMINI_API_KEY not found in .env file.")
             JOBS[job_id]['status'] = 'failed'
@@ -160,11 +159,12 @@ def run_comparison_background_task(job_id, files1_map, files2_map, output_name, 
         if not common_keys:
             log_queue.put("No common Excel files (.xlsx) found in the selected folders.")
             JOBS[job_id]['status'] = 'completed'
-            log_queue.put(f"DONE:{job_id}")
+            log_queue.put(f"DONE:completed:{job_id}")
             return
 
         log_queue.put(f"Found {len(common_keys)} common files to compare.")
         for i, key in enumerate(common_keys):
+            # ... (the file processing loop remains the same) ...
             log_queue.put(f"\n--- [{i+1}/{len(common_keys)}] Processing: {key} ---")
             filepath1 = files1_map[key]
             filepath2 = files2_map[key]
@@ -183,17 +183,24 @@ def run_comparison_background_task(job_id, files1_map, files2_map, output_name, 
                 log_queue.put(f"Waiting for {DELAY_BETWEEN_FILES} seconds...")
                 time.sleep(DELAY_BETWEEN_FILES)
 
-        log_queue.put("\n--- All comparisons complete! Zipping results... ---")
+        log_queue.put("\n--- All comparisons complete! ---")
+        
+        # === DIAGNOSTIC LOGGING ===
+        # Calculate the total size of the generated Excel files
+        total_size_bytes = sum(os.path.getsize(os.path.join(output_folder, f)) for f in os.listdir(output_folder))
+        total_size_mb = total_size_bytes / (1024 * 1024)
+        log_queue.put(f"Total size of files to zip: {total_size_mb:.2f} MB")
+        
+        log_queue.put("Zipping results...")
+        # === END DIAGNOSTIC LOGGING ===
+
         zip_path_base = os.path.join(tempfile.gettempdir(), output_name)
         zip_path = shutil.make_archive(zip_path_base, 'zip', output_folder)
         JOBS[job_id]['zip_path'] = zip_path
         JOBS[job_id]['status'] = 'completed'
-        log_queue.put(f"DONE:{job_id}")
+        log_queue.put(f"DONE:completed:{job_id}")
 
     except Exception as e:
-        # ### THIS IS THE DEBUGGING FIX ###
-        # In production, you might want to log this to a file instead.
-        # For development, we send the full traceback to the frontend.
         error_details = traceback.format_exc()
         log_queue.put("\n" + "="*20 + " SERVER ERROR " + "="*20)
         log_queue.put(f"A critical error occurred: {e}")
@@ -201,17 +208,13 @@ def run_comparison_background_task(job_id, files1_map, files2_map, output_name, 
         log_queue.put(error_details)
         log_queue.put("="*54)
         JOBS[job_id]['status'] = 'failed'
-        # ### END OF FIX ###
+        log_queue.put(f"DONE:failed:{job_id}")
 
     finally:
-        final_status = JOBS[job_id].get('status', 'unknown')
-        log_queue.put(f"DONE:{final_status}:{job_id}")
-        # This block will run whether there was an error or not.
-        # We must signal the frontend that the process is over.
-        # Clean up the temporary directories
+        # This block now ONLY handles cleanup.
         shutil.rmtree(temp_dir1)
         shutil.rmtree(temp_dir2)
-        if output_folder:
+        if output_folder and os.path.exists(output_folder):
             shutil.rmtree(output_folder)
 
 # ==============================================================================
